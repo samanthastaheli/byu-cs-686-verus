@@ -1,5 +1,6 @@
 use vstd::prelude::*;
 use vstd::arithmetic::mul::lemma_mul_inequality;
+use vstd::arithmetic::div_mod::lemma_mod_add_multiples_vanish;
 
 verus! {
 
@@ -64,43 +65,48 @@ verus! {
             }
         }
 
-        // // 1.5
-        // pub fn factorial_iter(n: usize) -> (result: usize)
-        //     requires
-        //         factorial_spec(n as nat) <= usize::MAX as nat,
-        //     ensures
-        //         factorial_spec(n as nat) == result,
-        // {
-        //     let mut result: usize = 1;
-        //     let mut i: usize = 0;
+        // 1.5
+        pub fn factorial_iter(n: usize) -> (result: usize)
+            requires
+                factorial_spec(n as nat) <= usize::MAX as nat,
+            ensures
+                factorial_spec(n as nat) == result,
+        {
+            let mut result: usize = 1;
+            let mut i: usize = 0;
             
-        //     while i < n  
-        //         invariant
-        //             0 <= i <= n, // i bounds 
-        //             factorial_spec(n as nat) <= usize::MAX as nat,
-        //             result == factorial_spec(i as nat),
-        //         decreases
-        //             n - i 
-        //     {
-        //         i += 1;
-        //         proof {
-        //             lemma_factorial_is_monotonic(i as nat, n as nat);
-        //         }
-        //         result = result * i;
-        //     }
-        //     result
-        // }
+            while i < n  
+                invariant
+                    i <= n,
+                    factorial_spec(n as nat) <= usize::MAX as nat,
+                    result == factorial_spec(i as nat),
+                decreases
+                    n - i 
+            {
+                let next: usize= i + 1;
 
-        // pub fn test_factorial_spec_and_factorial_iter_are_equal() {
-        //     // let result = factorial_iter(2);
-        //     // assert(result == factorial_spec(2));
-        //     proof {
-        //     assert_by_compute(factorial_spec(2) == 2);
-        //     }
+                proof {
+                    assert(i < n);
+                    lemma_factorial_is_monotonic((i as nat) + 1,n as nat,);
+                    assert(factorial_spec((i as nat) + 1) <= factorial_spec(n as nat));
+                    assert(factorial_spec((i as nat) + 1) <= usize::MAX as nat);
+                    reveal(factorial_spec);
+                    assert(factorial_spec(next as nat) == (next as nat) * factorial_spec(i as nat));
+                }
+                result = result * next;
+                i += 1;
+            }
+            result
+        }
 
-        //     let result = factorial_iter(2);
-        //     assert(result == 2);
-        // }
+        pub fn test_factorial_spec_and_factorial_iter_are_equal() {
+            proof {
+            assert_by_compute(factorial_spec(2) == 2);
+            }
+
+            let result = factorial_iter(2);
+            assert(result == 2);
+        }
     }
 
     mod problem_2 {
@@ -138,14 +144,6 @@ verus! {
             } else {
                 lemma_sum_to_n_is_monotonic(i, (j - 1) as nat);
             }
-            // TODO: this might work for iterative 
-            // if i <= j {
-            //     if j == 0 {
-            //     } else if i == j {
-            //     } else {
-            //         lemma_sum_to_n_is_monotonic(i, (j - 1) as nat);
-            //     }
-            // }
         }
 
         // 2.4: recursive implementation
@@ -167,7 +165,7 @@ verus! {
             }
         }
 
-          // 2.5: arithmetic implementation 
+        // 2.5: arithmetic implementation 
         // pub fn sum_to_n_arith(n: usize) -> (result: usize)
         //     requires
         //         sum_to_n_spec(n as nat) <= usize::MAX as nat,
@@ -258,7 +256,7 @@ verus! {
             assert_by_compute(gcd_spec(8, 2) > 0);
         }
 
-        proof fn lemma_gcd_positive(a: nat, b: nat)
+        pub proof fn lemma_gcd_positive(a: nat, b: nat)
             requires
                 !(a == 0 && b == 0),
             ensures
@@ -272,29 +270,51 @@ verus! {
             }
         }
 
-        use vstd::arithmetic::div_mod::lemma_mod_add_multiples_vanish;
+        // use vstd::arithmetic::div_mod::{lemma_fundamental_div_mod, lemma_mod_multiples_vanish};
+        // use vstd::arithmetic::div_mod::lemma_mod_adds;
+        // use vstd::arithmetic::div_mod::lemma_mod_multiples_basic;
+        // use vstd::arithmetic::mul::lemma_mul_is_associative;
 
-        proof fn lemma_gcd_divides(a: nat, b: nat)
-            requires
-                !(a == 0 && b == 0),
-            ensures
-                a % gcd_spec(a, b) == 0,
-                b % gcd_spec(a, b) == 0,
-            decreases
-                b
-        {
-            // lemma_gcd_positive(a, b);
+        // proof fn lemma_mod_mul_zero(x: int, q: int, m: int)
+        //     requires
+        //         m > 0,
+        //         x % m == 0,
+        //     ensures
+        //         (x * q) % m == 0,
+        // {
+        //     lemma_fundamental_div_mod(x, m);
+        //     lemma_mul_is_associative(m, (x / m), q);
+        //     lemma_mod_multiples_basic((x / m) * q, m);
+        // }
 
-            if b == 0 {}
-            else {
-                lemma_gcd_divides(b, (a % b) as nat);
-                assert(a < 0);
-                assert(b < 0);
-                // lemma_mod_add_multiples_vanish((a % b) as int, (a / b) as int, b as int, gcd_spec(a, b) as int);
-                // assert(a as int == (a / b) as int * (b as int) + (a % b) as int)
-            }
-        }
+        // pub proof fn lemma_gcd_divides(a: nat, b: nat)
+        //     requires
+        //         !(a == 0 && b == 0),
+        //     ensures
+        //         a % gcd_spec(a, b) == 0,
+        //         b % gcd_spec(a, b) == 0,
+        //     decreases
+        //         a, b
+        // {
+        //     lemma_gcd_positive(a, b);
+        //     if a == 0 {
 
+        //     } else if b == 0 {
+
+        //     } else if a > b {
+        //         let g = gcd_spec(a , b) as int;
+        //         lemma_gcd_divides(a % b, b);
+        //         lemma_fundamental_div_mod(a as int, b as int);
+        //         lemma_mod_mul_zero(b as int, (a / b) as int, g);
+        //         lemma_mod_adds(b as int * (a as int / b as int), a as int % b as int, g)
+        //     } else {
+        //         let g = gcd_spec(a , b) as int;
+        //         lemma_gcd_divides(a % b, b);
+        //         lemma_fundamental_div_mod(a as int, b as int);
+        //         lemma_mod_mul_zero(a as int, (b / a) as int, g);
+        //         lemma_mod_adds(a as int * (b as int / a as int), b as int % a as int, g)
+        //     }
+        // }
     }
 
     fn main()
