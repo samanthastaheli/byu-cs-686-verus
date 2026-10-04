@@ -165,18 +165,7 @@ verus! {
             }
         }
 
-        // 2.5: arithmetic implementation 
-        // pub fn sum_to_n_arith(n: usize) -> (result: usize)
-        //     requires
-        //         sum_to_n_spec(n as nat) <= usize::MAX as nat,
-        //     ensures
-        //         sum_to_n_spec(n as nat) == result,
-        // {
-            
-        //     let result = n * (n + 1) / 2;
-        //     result
-        // }
-
+        // Proofs
         pub proof fn lemma_sum_to_n_is_commutative(n: nat) 
             ensures
                 sum_to_n_spec(n) == n * (n + 1) / 2,
@@ -194,15 +183,6 @@ verus! {
                 {};
             }
         }
-
-        //  pub fn test_sum_to_n_spec_and_sum_to_n_arith_are_equal() {
-        //     proof {
-        //     assert_by_compute(sum_to_n_spec(1) == 1);
-        //     }
-
-        //     let result = sum_to_n_arith(1);
-        //     assert(result == 1);
-        // }
 
         pub proof fn lemma_sum_to_n_is_distributive_add(n: nat) 
             ensures
@@ -270,51 +250,51 @@ verus! {
             }
         }
 
-        // use vstd::arithmetic::div_mod::{lemma_fundamental_div_mod, lemma_mod_multiples_vanish};
-        // use vstd::arithmetic::div_mod::lemma_mod_adds;
-        // use vstd::arithmetic::div_mod::lemma_mod_multiples_basic;
-        // use vstd::arithmetic::mul::lemma_mul_is_associative;
+        use vstd::arithmetic::div_mod::{lemma_fundamental_div_mod, lemma_mod_multiples_vanish};
+        use vstd::arithmetic::div_mod::lemma_mod_adds;
+        use vstd::arithmetic::div_mod::lemma_mod_multiples_basic;
+        use vstd::arithmetic::mul::lemma_mul_is_associative;
 
-        // proof fn lemma_mod_mul_zero(x: int, q: int, m: int)
-        //     requires
-        //         m > 0,
-        //         x % m == 0,
-        //     ensures
-        //         (x * q) % m == 0,
-        // {
-        //     lemma_fundamental_div_mod(x, m);
-        //     lemma_mul_is_associative(m, (x / m), q);
-        //     lemma_mod_multiples_basic((x / m) * q, m);
-        // }
+        proof fn lemma_mod_mul_zero(x: int, q: int, m: int)
+            requires
+                m > 0,
+                x % m == 0,
+            ensures
+                (x * q) % m == 0,
+        {
+            lemma_fundamental_div_mod(x, m);
+            lemma_mul_is_associative(m, (x / m), q);
+            lemma_mod_multiples_basic((x / m) * q, m);
+        }
 
-        // pub proof fn lemma_gcd_divides(a: nat, b: nat)
-        //     requires
-        //         !(a == 0 && b == 0),
-        //     ensures
-        //         a % gcd_spec(a, b) == 0,
-        //         b % gcd_spec(a, b) == 0,
-        //     decreases
-        //         a, b
-        // {
-        //     lemma_gcd_positive(a, b);
-        //     if a == 0 {
+        pub proof fn lemma_gcd_divides(a: nat, b: nat)
+            requires
+                !(a == 0 && b == 0),
+            ensures
+                a % gcd_spec(a, b) == 0,
+                b % gcd_spec(a, b) == 0,
+            decreases
+                a, b
+        {
+            lemma_gcd_positive(a, b);
+            if a == 0 {
 
-        //     } else if b == 0 {
+            } else if b == 0 {
 
-        //     } else if a > b {
-        //         let g = gcd_spec(a , b) as int;
-        //         lemma_gcd_divides(a % b, b);
-        //         lemma_fundamental_div_mod(a as int, b as int);
-        //         lemma_mod_mul_zero(b as int, (a / b) as int, g);
-        //         lemma_mod_adds(b as int * (a as int / b as int), a as int % b as int, g)
-        //     } else {
-        //         let g = gcd_spec(a , b) as int;
-        //         lemma_gcd_divides(a % b, b);
-        //         lemma_fundamental_div_mod(a as int, b as int);
-        //         lemma_mod_mul_zero(a as int, (b / a) as int, g);
-        //         lemma_mod_adds(a as int * (b as int / a as int), b as int % a as int, g)
-        //     }
-        // }
+            } else if a > b {
+                let g = gcd_spec(a , b) as int;
+                lemma_gcd_divides(a % b, b);
+                lemma_fundamental_div_mod(a as int, b as int);
+                lemma_mod_mul_zero(b as int, (a / b) as int, g);
+                lemma_mod_adds(b as int * (a as int / b as int), a as int % b as int, g)
+            } else {
+                let g = gcd_spec(a , b) as int;
+                lemma_gcd_divides(a % b, b);
+                lemma_fundamental_div_mod(a as int, b as int);
+                lemma_mod_mul_zero(a as int, (b / a) as int, g);
+                lemma_mod_adds(a as int * (b as int / a as int), b as int % a as int, g)
+            }
+        }
     }
 
     fn main()
