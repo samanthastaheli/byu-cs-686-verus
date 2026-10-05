@@ -24,3 +24,27 @@
       * $wp([assume \ e],Q) = e \rightarrow Q$
       * $wp([assume \ e],Q) = e ^ Q$
       * $wp([y = f(x)],Q) = wp([assort \ f_{pre}[x/i] assume f_{post}[x,y/i,o], Q)$
+
+```rust
+exec fn g(x: isize) -> (r: isize) 
+        requires
+            x > isize::MIN + 1,
+            x < isize::MAX - 1,
+            x <= -9 || x >= 9,
+        ensures
+            r > 9,
+            r > x,
+    {
+        let mut r: isize = x;
+        if r < 0 {
+            r = -r;
+        }
+        r = r + 1;
+
+        r
+    }
+```
+
+Numbers are correlated to lines of code in the above.
+
+![](process_tree.jpeg)
