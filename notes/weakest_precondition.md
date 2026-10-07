@@ -20,11 +20,17 @@
       * termination case: $wp([], Q) = Q$
       * sequencing rule: $wp([s_0; s_1,], Q) = wp([s_0], wp([s_1], w)$
       * $wp([x: = e], Q) = Q[e/x]$
-      * $wp([if \ c \ s_r \ s_E], Q) = (c ^ wp([s_T], Q)) V (\not c ^ wp(s_E],Q)$
+      * conditional (if) rule: $wp([if \ c \ s_r \ s_E], Q) = (c ^ wp([s_T], Q)) V (\not c ^ wp(s_E],Q)$
       * $wp([assume \ e],Q) = e \rightarrow Q$
       * $wp([assume \ e],Q) = e ^ Q$
       * $wp([y = f(x)],Q) = wp([assort \ f_{pre}[x/i] assume f_{post}[x,y/i,o], Q)$
 
+
+### Weakest Precondition Calculus Rules
+
+![](wp_calculus.jpeg)
+
+### Code Example
 ```rust
 exec fn g(x: isize) -> (r: isize) 
         requires
