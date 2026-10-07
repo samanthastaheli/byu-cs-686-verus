@@ -40,6 +40,8 @@ verus! {
         // req needs to be strong enough to guarantee q_3 (the weakest precondition)
     }
 
+    // While Loop
+
     exec fn h(n: usize) -> (m: usize)
         requires 
             n >= 0,
@@ -47,27 +49,16 @@ verus! {
             n == m,
     {
         let mut m: usize = 0;
-        assert(m <= n);
-        // havoc m_0
-        assume(m_0 <= n);
-        if m_0 < n 
+        assert(n >= 0 && m <= n); // assert the invariant at the head of the loop
+        // havoc m
+        assume(n >= 0 && m <= n);
+        if m < n // change while to if
         {
-            m_0 = m_0 + 1;
-            assert(m_0 <= n); // end of loop assert the invariant 
-        } else {
-        }
-
-        // old:
-        // let mut m: usize = 0;
-        // assert(m <= n);
-        // while m < n 
-        //     invariant 
-        //         m <= n,
-        //     decreases n - m,
-        // {
-        //     m = m + 1;
-        // }
-
+            m = m + 1;
+            assert(n >= 0 && m <= n); // end of loop assert the invariant 
+            assume(false); // false -> 0 
+        } 
+        
         m
     }
 

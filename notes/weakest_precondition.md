@@ -16,21 +16,29 @@
     * figure out what weakest precondition needs to be to imply weakest postcondition 
     * $p \rightarrow wp(s,Q)$
     * use to propagate through all the statements ending at precondition (`{P}`)
-    * rules:
-      * termination case: $wp([], Q) = Q$
-      * sequencing rule: $wp([s_0; s_1,], Q) = wp([s_0], wp([s_1], w)$
-      * $wp([x: = e], Q) = Q[e/x]$
-      * conditional (if) rule: $wp([if \ c \ s_r \ s_E], Q) = (c ^ wp([s_T], Q)) V (\not c ^ wp(s_E],Q)$
-      * $wp([assume \ e],Q) = e \rightarrow Q$
-      * $wp([assume \ e],Q) = e ^ Q$
-      * $wp([y = f(x)],Q) = wp([assort \ f_{pre}[x/i] assume f_{post}[x,y/i,o], Q)$
+
+### WP Rules
+1. termination case: $wp([], Q) = Q$
+2. sequencing rule: $wp([s_0; s_1,], Q) = wp([s_0], wp([s_1], Q)$
+3. $wp([x: = e], Q) = Q[e/x]$ (replace x with e)
+4. $wp([assume \ e],Q) = e \wedge Q$
+5. $wp([assume \ e],Q) = e \rightarrow Q$
+6. $wp([y = f(x)],Q) = wp([assert \ p_{f}[x/i]; \  assume \ Q_{f}[x/i,y/o], Q)$
+7. $wp([while \ c \ s \ I \ d], Q) = $
+   1. $\wedge I$
+   2. $\wedge \forall xs \ c \wedge I \rightarrow wp([s], I)$
+   3. $\wedge \forall xs \not c \wedge I \rightarrow Q$
+   4. $\wedge \forall xs \ c \wedge I \rightarrow wp([s], d \geq 0)$
+   5. $\wedge \forall xs \ c \wedge I \rightarrow wp([t=d;s], t > d)$
+8. conditional (if) rule: $wp([if \ c \ s_r \ s_E], Q) = (c ^ wp([s_T], Q)) V (\not c \wedge wp(s_E],Q)$
 
 
 ### Weakest Precondition Calculus Rules
 
 ![](wp_calculus.jpeg)
 
-### Code Example
+#### If Statements
+
 ```rust
 exec fn g(x: isize) -> (r: isize) 
         requires
@@ -54,3 +62,65 @@ exec fn g(x: isize) -> (r: isize)
 Numbers are correlated to lines of code in the above.
 
 ![](process_tree.jpeg)
+
+#### While Loop
+
+Rules:
+
+1. assert the invariant at the head of the loop
+
+##### Old While Loop
+```rust
+let mut m: usize = 0;
+        assert(m <= n);
+        while m < n 
+            invariant 
+                m <= n,
+            decreases n - m,
+        {
+            m = m + 1;
+        }
+```
+
+##### New As If Statement
+
+```rust
+25      exec fn h(n: usize) -> (m: usize)
+26        requires 
+27              n >= 0,
+28        ensures 
+29            n == m,
+30    {
+31        let mut m: usize = 0;
+32        assert(n >= 0 && m <= n); // assert the invariant at the head of the loop
+33        // havoc m
+34        assume(n >= 0 && m <= n);
+35        if m < n // change while to if
+36        {
+37            m = m + 1;
+38            assert(n >= 0 && m <= n); // end of loop assert the invariant 
+39            assume(false); // false -> 0 
+40        } 
+41        
+42        m
+```
+
+$w|p (while \ c \ s \ I \ Q) =$
+
+$\wedge I $
+
+$\wedge \forall xs \ c \wedge I \rightarrow wp(s,I)$
+
+$\wedge \forall xs \ \not c \wedge I \rightarrow Q$
+
+$\wedge \forall xs \ c \wedge I \rightarrow wp(s, d \geq 0)$
+
+$\wedge \forall xs \ c \wedge I \rightarrow wp([t'=d;s], t' > d)$
+
+
+$\lor$
+
+
+HW3:
+
+use forall in an assert to "write out wp's"

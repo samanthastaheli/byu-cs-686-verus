@@ -58,7 +58,7 @@ verus! {
             let ghost q_2: bool = q_1 < 0; // then
             let ghost q_3: bool = q_1 == 1;
             let ghost q_4: bool =  (true && q_1 + 1 > 1) || q_1 == 10; // else
-            let ghost condition_rule: bool = q_3 || q_4;
+            let ghost condition_rule: bool = q_3 && q_4;
             let ghost req: bool = usize::MIN <= x0 - 3 <= usize::MAX;
             assert(req ==> condition_rule);
         }
