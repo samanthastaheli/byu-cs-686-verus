@@ -18,19 +18,19 @@
     * use to propagate through all the statements ending at precondition (`{P}`)
 
 ### WP Rules
-1. termination case: $wp([], Q) = Q$
-2. sequencing rule: $wp([s_0; s_1,], Q) = wp([s_0], wp([s_1], Q)$
-3. $wp([x: = e], Q) = Q[e/x]$ (replace x with e)
-4. $wp([assume \ e],Q) = e \wedge Q$
-5. $wp([assume \ e],Q) = e \rightarrow Q$
-6. $wp([y = f(x)],Q) = wp([assert \ p_{f}[x/i]; \  assume \ Q_{f}[x/i,y/o], Q)$
-7. $wp([while \ c \ s \ I \ d], Q) = $
+1. Termination case: $wp([], Q) = Q$
+2. Sequencing rule: $wp([s_0; s_1,], Q) = wp([s_0], wp([s_1], Q)$
+3. Assignment rule: $wp([x: = e], Q) = Q[e/x]$ (replace x with e)
+4. Assume (Partial Correctness): $wp([assume \ e],Q) = e \wedge Q$
+5. Assume (Total Correctness / Standard Logic): $wp([assume \ e],Q) = e \rightarrow Q$
+6. Function?Procedure Call: $wp([y = f(x)],Q) = wp([assert \ p_{f}[x/i]; \  assume \ Q_{f}[x/i,y/o], Q)$
+7. While Loop (with invariant $I$ and variant/decrease metric $d$): $wp([while \ c \ s \ I \ d], Q) = $
    1. $\wedge I$
    2. $\wedge \forall xs \ c \wedge I \rightarrow wp([s], I)$
    3. $\wedge \forall xs \not c \wedge I \rightarrow Q$
    4. $\wedge \forall xs \ c \wedge I \rightarrow wp([s], d \geq 0)$
    5. $\wedge \forall xs \ c \wedge I \rightarrow wp([t=d;s], t > d)$
-8. conditional (if) rule: $wp([if \ c \ s_r \ s_E], Q) = (c ^ wp([s_T], Q)) V (\not c \wedge wp(s_E],Q)$
+8. Conditional (if) rule: $wp([if \ c \ s_r \ s_E], Q) = (c ^ wp([s_T], Q)) V (\not c \wedge wp(s_E],Q)$
 
 
 ### Weakest Precondition Calculus Rules
