@@ -23,7 +23,7 @@
 3. Assignment rule: $wp([x: = e], Q) = Q[e/x]$ (replace x with e)
 4. Assume (Partial Correctness): $wp([assume \ e],Q) = e \wedge Q$
 5. Assume (Total Correctness / Standard Logic): $wp([assume \ e],Q) = e \rightarrow Q$
-6. Function?Procedure Call: $wp([y = f(x)],Q) = wp([assert \ p_{f}[x/i]; \  assume \ Q_{f}[x/i,y/o], Q)$
+6. Function/Procedure Call: $wp([y = f(x)],Q) = wp([assert \ p_{f}[x/i]; \  assume \ Q_{f}[x/i,y/o], Q)$
 7. While Loop (with invariant $I$ and variant/decrease metric $d$): $wp([while \ c \ s \ I \ d], Q) = $
    1. $\wedge I$
    2. $\wedge \forall xs \ c \wedge I \rightarrow wp([s], I)$

@@ -53,19 +53,62 @@ verus! {
 
         proof fn m_wp(x0: isize)
         {
-            let ghost q_0: bool = (x0 < 3) || (x0 >= 3);
-            let ghost q_1: bool = x0 < 3;
-            let ghost q_2: bool = q_1 < 0; // then
-            let ghost q_3: bool = q_1 == 1;
-            let ghost q_4: bool =  (true && q_1 + 1 > 1) || q_1 == 10; // else
-            let ghost condition_rule: bool = q_3 && q_4;
+            let ghost x: int = x0 - 3;
+            let ghost postcondition: bool = (x0 < 3 ==> x == 1) || (x0 >= 3 ==> x < x0);
+            let ghost inner_then: bool = (true && x0 == x0 + 1);
+            let ghost inner_else: bool = x0 == 10;
+            let ghost outer_then: bool =  (x0 < 3 && x == 1);
+            let ghost outer_else: bool = (x0 >= 3 && (inner_then || inner_else));
+            let ghost condition_rule: bool = outer_then && outer_else;
+            assert(condition_rule ==> postcondition);
             let ghost req: bool = usize::MIN <= x0 - 3 <= usize::MAX;
-            assert(req ==> condition_rule);
+            assert(req ==> postcondition);
         }
     }
 
     mod problem_3 {
         use vstd::prelude::*;
+
+        spec fn is_median_spec(a: int, b: int, c: int, m: int) -> (bool) {
+            ||| (m == a && (b <= a <= c || c <= a <= b))
+            ||| (m == b && (a <= b <= c || c <= b <= a))
+            ||| (m == c && (a <= c <= b || b <= c <= a))
+        }
+
+        spec fn median_spec(a: int, b: int, c: int) -> (int) {
+            if (a >= b && a <= c) || (a >= c && a <= b) {
+                a
+            } else if (b >= a && b <= c) || (b >= c && b <= a) {
+                b
+            } else {
+                c
+            }
+        }
+
+        proof fn lemma_median_spec_is_median(a: int, b: int, c: int, m: int)
+            requires
+                m == median_spec(a, b, c),
+            ensures
+                is_median_spec(a, b, c, m),
+        {
+            let ghost branch_then = (a >= b && a <= c) || (a >= c && a <= b);
+            let ghost branch_else_if = (b >= a && b <= c) || (b >= c && b <= a);
+            let ghost branch_else = !(branch_then || branch_else_if);
+
+            if branch_then {
+                assert(m == a);
+                assert((a >= b && a <= c) || (a >= c && a <= b));
+                assert(is_median_spec(a, b, c, m));
+            } else if branch_else_if {
+                assert(m == b);
+                assert((b >= a && b <= c) || (b >= c && b <= a));
+                assert(is_median_spec(a, b, c, m));
+            } else {
+                assert(m == c);
+                assert((c >= a && c <= b) || (c >= b && c <= a));
+                assert(is_median_spec(a, b, c, m));
+            }
+        }
     }
 
     fn main() {}
