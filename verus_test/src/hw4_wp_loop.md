@@ -27,4 +27,18 @@ for all n, res ==> (4)
 
 ### Code
 ```rust
+pub proof fn lemma_q3(n0: usize, m0: usize, res: usize, n: usize) 
+{
+    // I (invariant)
+    // assert requires implies invariant
+    assert((m0 != 0 && n0 * m0 <= usize::MAX) ==> (m0 != 0 && n0 * m0 <= usize::MAX && n0 * m0 == res + n * m0));
+
+    // while loop body preserves I
+    assert((0 < n) ==> (m0 != 0 && n0 * m0 <= usize::MAX && n0 * m0 == res + n * m0 && res + m0 <= n0 * m0));
+    assert((0 < n) ==> (n0 * m0 == (res + m0) + (n-1) * m0) && ((res+m0) + m0 <= n0 * m0));
+    // not looping implies Q
+    assert((0 < n) ==> (res == 0));
+    // termination
+    assert((n > 0));
+}
 ```
