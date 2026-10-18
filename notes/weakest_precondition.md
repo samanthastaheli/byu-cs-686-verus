@@ -25,11 +25,11 @@
 5. Assume (Total Correctness / Standard Logic): $wp([assume \ e],Q) = e \rightarrow Q$
 6. Function/Procedure Call: $wp([y = f(x)],Q) = wp([assert \ p_{f}[x/i]; \  assume \ Q_{f}[x/i,y/o], Q)$
 7. While Loop (with invariant $I$ and variant/decrease metric $d$): $wp([while \ c \ s \ I \ d], Q) = $
-   1. $\wedge I$
-   2. $\wedge \forall xs \ c \wedge I \rightarrow wp([s], I)$
-   3. $\wedge \forall xs \not c \wedge I \rightarrow Q$
-   4. $\wedge \forall xs \ c \wedge I \rightarrow wp([s], d \geq 0)$
-   5. $\wedge \forall xs \ c \wedge I \rightarrow wp([t=d;s], t > d)$
+   1. $\wedge I$ (initial init, loop invariant must be true before entering loop)
+   2. $\wedge \forall xs \ c \wedge I \rightarrow wp([s], I)$ (invariant preservation)
+   3. $\wedge \forall xs \not c \wedge I \rightarrow Q$ (postcondition on termination)
+   4. $\wedge \forall xs \ c \wedge I \rightarrow wp([s], d \geq 0)$ (variant lower bound)
+   5. $\wedge \forall xs \ c \wedge I \rightarrow wp([t=d;s], t > d)$ (varient strict decrease)
 8. Conditional (if) rule: $wp([if \ c \ s_r \ s_E], Q) = (c ^ wp([s_T], Q)) V (\not c \wedge wp(s_E],Q)$
 
 

@@ -57,10 +57,75 @@ verus! {
     mod problem_2 {
         use vstd::prelude::*;
 
+        pub exec fn sum_to_n_rec_impl(n: usize) -> (sum: usize)
+            requires
+                n * (n + 1) / 2 <= usize::MAX,
+            ensures
+                n * (n + 1) / 2 == sum,
+            decreases n,
+        {
+            if n == 0 {
+                0
+            } else {
+                n + sum_to_n_rec_impl((n-1) as usize)
+            }
+        }
+
+        pub proof fn lemma_sum_to_n_rec_impl(n: usize, sum: usize) {
+            // Assert the invariant
+            assert(n * (n + 1) / 2 == sum);
+            
+            // not looping implies Q
+            if n == 0 {
+                assert(sum == 0);
+            } else {
+                // Prove while loop preserves the invariant
+                let sum_prev = sum_to_n_rec_impl((n-1) as usize);
+                assert(sum == n + sum_prev);
+                lemma_sum_to_n_rec_impl((n-1) as usize, sum_prev);
+                assert(sum == n * (n + 1) / 2);
+            }
+        }
+
     }
 
     mod problem_3 {
         use vstd::prelude::*;
+
+        pub exec fn sum_to_n_iter_impl(n: usize) -> (sum: usize)
+            requires
+                n * (n + 1) / 2 <= usize::MAX,
+            ensures
+                n * (n + 1) / 2 == sum,
+            decreases n,
+        {
+            let mut i: usize = 0;
+            let mut acc: usize = 0;
+
+            while i < n
+                invariant
+                    i <= n,
+                    acc == i * (i + 1) / 2,
+                    n * (n + 1) / 2 <= usize::MAX,
+                decreases
+                    n - i,
+            {
+                i = i + 1;
+                acc = acc + i;
+            }
+            acc
+        }
+
+        pub proof fn lemma_sum_to_n_iter_impl(n: usize, i: usize, acc: usize) {
+            // Assume the invariant holds
+            assert(i <= n && acc == i * (i + 1) / 2 && n * (n + 1) / 2 <= usize::MAX);
+            // loop body preserves the invariant
+            assert(i < n ==> ((i+1) <= n && (acc + (i+1)) == (i+1) * ((i+1) + 1) / 2 && n * (n + 1) / 2 <= usize::MAX));
+            // not going through loop, not looping implies Q 
+            assert(!(i < n) ==> (i <= n && acc == i * (i + 1) / 2 && n * (n + 1) / 2 <= usize::MAX));
+            // termination
+            assert(i < n ==> (n - i > 0));
+        }
     }
 
     fn main() {}
