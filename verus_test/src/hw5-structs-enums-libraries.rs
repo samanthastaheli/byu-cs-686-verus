@@ -140,6 +140,8 @@ verus! {
         use vstd::prelude::*;       
         // Remove consecutive duplicates (run squashing)
 
+        // 3.1: Write a spec for dedup_runs_spec(s: Seq<int>) -> Seq<int> that removes 
+        // adjacent duplicates (keeps the first of each run).
         pub open spec fn dedup_runs_spec(s: Seq<int>) -> Seq<int>
             decreases s.len(),
         {
@@ -157,11 +159,204 @@ verus! {
             }
         }
 
+        // 3.2: Prove that the spec guarantees no consecutive duplicates preserves 
+        // all other elements in the source array. So for r = dedup_runs_spec(s)
+        // forall i (0 <= i < r.len() - 1 ==> r[i] != r[i+1])
+        // and
+        // forall i (0 <= i < r.len() ==> )
         pub proof fn lemma_dedup_runs_spec(s: Seq<int>)
             ensures
-                forall|i: int| 0 <= i < dedup_runs_spec(s).len() ==> #[trigger] (exists|j: int| 0 <= j < s.len() && dedup_runs_spec(s)[i] == s[j]),
-                forall|i: int| 0 <= i < s.len() ==> #[trigger] (exists|j: int| 0 <= j < dedup_runs_spec(s).len() && s[i] == dedup_runs_spec(s)[j]),
+                forall|i: int| 0 <= i < dedup_runs_spec(s).len() ==>
+                    s.contains(#[trigger] dedup_runs_spec(s)[i]),
+                forall|i: int| 0 <= i < s.len() ==>
+                    dedup_runs_spec(s).contains(#[trigger] s[i]),
+            decreases s.len(),
         {
+            if s.len() > 0 {
+                let p = s.drop_last();
+                assert(p.len() == s.len() - 1);
+                lemma_dedup_runs_spec(p);
+
+                let rest = dedup_runs_spec(p);
+                let r = dedup_runs_spec(s);
+                let same = rest.len() > 0 && rest.last() == s.last();
+
+                // unfold the definition once, in a form that stays in scope
+                assert(same ==> r == rest);
+                assert(!same ==> r == rest.push(s.last()));
+
+                // Part 1: every element of the result is in s
+                assert forall|i: int| 0 <= i < r.len() implies s.contains(#[trigger] r[i]) by {
+                    if i < rest.len() {
+                        assert(r[i] == rest[i]);
+                        assert(p.contains(rest[i]));
+                        let j = choose|j: int| 0 <= j < p.len() && p[j] == rest[i];
+                        assert(s[j] == p[j]);
+                        assert(0 <= j < s.len() && s[j] == r[i]);
+                    } else {
+                        // if `same`, r == rest and i >= rest.len() contradicts i < r.len()
+                        assert(!same);
+                        assert(i == rest.len());
+                        assert(r[i] == s.last());
+                        assert(0 <= s.len() - 1 < s.len() && s[s.len() - 1] == r[i]);
+                    }
+                }
+
+                // Part 2: every element of s is in the result
+                assert forall|i: int| 0 <= i < s.len() implies r.contains(#[trigger] s[i]) by {
+                    if i < p.len() {
+                        assert(s[i] == p[i]);
+                        assert(rest.contains(p[i]));
+                        let j = choose|j: int| 0 <= j < rest.len() && rest[j] == p[i];
+                        assert(r[j] == rest[j]);
+                        assert(0 <= j < r.len() && r[j] == s[i]);
+                    } else {
+                        assert(i == s.len() - 1);
+                        assert(s[i] == s.last());
+                        if same {
+                            assert(r[rest.len() - 1] == s.last());
+                            assert(0 <= rest.len() - 1 < r.len());
+                        } else {
+                            assert(r[rest.len() as int] == s.last());
+                            assert(0 <= rest.len() < r.len());
+                        }
+                    }
+                }
+            }
+        }
+
+        pub proof fn lemma_dedup_runs_no_adjacent_dups(s: Seq<int>)
+            ensures
+                forall|i: int| 0 <= i < dedup_runs_spec(s).len() - 1 ==>
+                    #[trigger] dedup_runs_spec(s)[i] != dedup_runs_spec(s)[i + 1],
+            decreases s.len(),
+        {
+            if s.len() > 0 {
+                let p = s.drop_last();
+                assert(p.len() == s.len() - 1);
+                lemma_dedup_runs_no_adjacent_dups(p);
+
+                let rest = dedup_runs_spec(p);
+                let r = dedup_runs_spec(s);
+                let same = rest.len() > 0 && rest.last() == s.last();
+                assert(same ==> r == rest);
+                assert(!same ==> r == rest.push(s.last()));
+
+                assert forall|i: int| 0 <= i < r.len() - 1 implies #[trigger] r[i] != r[i + 1] by {
+                    if same {
+                        assert(rest[i] != rest[i + 1]);          // induction hypothesis
+                    } else if i + 1 < rest.len() {
+                        assert(r[i] == rest[i]);
+                        assert(r[i + 1] == rest[i + 1]);
+                        assert(rest[i] != rest[i + 1]);          // induction hypothesis
+                    } else {
+                        // i + 1 == rest.len(): the pair straddles rest.last() and the pushed s.last()
+                        assert(i + 1 == rest.len());
+                        assert(r[i] == rest[i]);
+                        assert(rest[i] == rest.last());
+                        assert(r[i + 1] == s.last());
+                        // !same && rest.len() > 0  ==>  rest.last() != s.last()
+                    }
+                }
+            } else {
+                assert(dedup_runs_spec(s) == Seq::<int>::empty());
+            }
+        }
+
+        // 3.3: Implement dedup_runs(v: &Vec<isize>) -> Vec<isize> iteratively and prove 
+        // refinement relative to the spec.
+        pub open spec fn to_ints(s: Seq<isize>) -> Seq<int> {
+            Seq::new(s.len(), |i: int| s[i] as int)
+        }
+
+        pub open spec fn dedup_step(rest: Seq<int>, x: int) -> Seq<int> {
+            if rest.len() > 0 && rest.last() == x { rest } else { rest.push(x) }
+        }
+
+        pub proof fn lemma_to_ints_push(s: Seq<isize>, x: isize)
+            ensures
+                to_ints(s.push(x)) == to_ints(s).push(x as int),
+        {
+            assert(to_ints(s.push(x)) =~= to_ints(s).push(x as int));
+        }
+
+        pub proof fn lemma_to_ints_take_succ(s: Seq<isize>, i: int)
+            requires
+                0 <= i < s.len(),
+            ensures
+                to_ints(s.take(i + 1)).len() == i + 1,
+                to_ints(s.take(i + 1)).drop_last() == to_ints(s.take(i)),
+                to_ints(s.take(i + 1)).last() == s[i] as int,
+        {
+            let t = s.take(i + 1);
+            assert(t.len() == i + 1);
+            assert(s.take(i).len() == i);
+            assert(to_ints(t).drop_last() =~= to_ints(s.take(i)));
+            assert(t[i] == s[i]);
+        }
+
+        // one loop step of the exec code, expressed on the spec side
+        pub proof fn lemma_dedup_take_succ(v: Seq<isize>, i: int)
+            requires
+                0 <= i < v.len(),
+            ensures
+                dedup_runs_spec(to_ints(v.take(i + 1)))
+                    == dedup_step(dedup_runs_spec(to_ints(v.take(i))), v[i] as int),
+        {
+            lemma_to_ints_take_succ(v, i);
+            let ns = to_ints(v.take(i + 1));
+            assert(ns.len() > 0);
+            assert(dedup_runs_spec(ns) == dedup_step(dedup_runs_spec(ns.drop_last()), ns.last()));
+        }
+
+        pub exec fn dedup_runs(v: &Vec<isize>) -> (out: Vec<isize>)
+            ensures
+                to_ints(out@) == dedup_runs_spec(to_ints(v@)),
+        {
+            let mut out: Vec<isize> = Vec::new();
+            let mut i: usize = 0;
+
+            proof {
+                let e = to_ints(v@.take(0));
+                assert(e.len() == 0);
+                assert(dedup_runs_spec(e) == Seq::<int>::empty());
+                assert(to_ints(out@) =~= Seq::<int>::empty());
+            }
+
+            while i < v.len()
+                invariant
+                    i <= v.len(),
+                    to_ints(out@) == dedup_runs_spec(to_ints(v@.take(i as int))),
+                decreases v.len() - i,
+            {
+                let x = v[i];
+                let ghost rest = to_ints(out@);
+
+                proof {
+                    lemma_dedup_take_succ(v@, i as int);
+                    assert(rest.len() == out@.len());
+                    if out@.len() > 0 {
+                        assert(rest.last() == out@[out@.len() - 1] as int);
+                    }
+                }
+
+                if out.len() > 0 && out[out.len() - 1] == x {
+                    // x continues the current run: drop it
+                } else {
+                    proof { lemma_to_ints_push(out@, x); }
+                    out.push(x);
+                }
+
+                proof {
+                    assert(to_ints(out@) == dedup_step(rest, x as int));
+                }
+                i += 1;
+            }
+
+            proof {
+                assert(v@.take(v@.len() as int) =~= v@);
+            }
+            out
         }
     }
 
