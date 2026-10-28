@@ -1,6 +1,6 @@
 # Dykstra Shortest Path
 
-*Lecture 10-26-26*
+## *Lecture 10-26-26*
 
 ```rust
 shortest_path(g: Graphspec, src: nat, dst: nat) -> Option(Seq<nat>)
@@ -12,9 +12,9 @@ lemma_shortest_path:
 
 ![](shortest_path_graph.png)
 
-| | A | B | C | D | E | F |
-|--|---|---|---|---|---|---|
-| S-0| 0 | - | - | - | - | - |
+|     | A | B | C | D | E | F |
+|-----|---|---|---|---|---|---|
+| S-0 | 0 | - | - | - | - | - |
 
 S = settled 
 
@@ -36,3 +36,19 @@ D: [A, C, D]
 E: [A, C, D, E]
 
 F: [A, C, D, E, F]
+
+## *Lecture 10-28-26*
+
+### Options
+
+`Options(some(w) (some nat number) | None = null)`
+
+### Trigger
+
+* need to tell SMT solver what values to enumerate 
+* usually attached to a function
+* form of universal insanitation 
+
+```rust
+forall|u:nat, v:nat| (#[trigger] (self.e(u,v)).is_some()) ==> u < self.n && v < self.n 
+```
