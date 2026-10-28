@@ -7,21 +7,6 @@ verus! {
         pub open spec fn count_spec(s: Seq<int>, x: int) -> int
             decreases s.len(),
         {
-            // let mut i: int = s.len() as int;
-            // let mut count: int = 0;
-
-            // while i > 0 
-            //     invariant
-            //         i <= s.len() as int,
-            //         i >= 0,
-            //     decreases i
-            // {
-            //     if s[i] == x {
-            //         count = count + 1;
-            //     }
-            //     i = i - 1;
-            // }
-            // count
             if s.len() == 0 {
                 0
             } else {
