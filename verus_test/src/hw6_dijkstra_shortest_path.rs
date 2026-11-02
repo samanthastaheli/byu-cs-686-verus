@@ -82,8 +82,14 @@ impl GraphSpec {
             self.cost(p.push(v)) == self.cost(p) + self.edge(p.last(), v).unwrap(),
             // * cost + weight = cost of that node 
     {
-        admit();  // TODO(student): replace with a proof
+        let q = p.push(v);
+
+        // TODO(student): replace with a proof
         // * need assertions for push
+        assert(q.len() == p.len() + 1); // assert same length 
+        assert(q.last() == v); // assert last element is v
+        assert(q.drop_last() =~= p); // assert equal 
+        assert forall|i: int| 0 <= i < p.len() implies q[i] == p[i] by {}  // push_index_different
     }
 
     /// Prefixes of paths are paths and cost no more (weights are naturals).
@@ -95,11 +101,18 @@ impl GraphSpec {
             self.is_path(p.take(k)),
             self.cost(p.take(k)) <= self.cost(p),
     {
-        admit();  // TODO(student): replace with a proof
+        // TODO(student): replace with a proof
         // * need assertions for take 
+        let q = p.take(k);
+
+        assert(q.len() == k);
+        // assert(q.len() == p.len() - k);
+        assert(q.last() == p[k - 1]);
+        assert forall|i: int| 0 <= i < k implies q[i] == p[i] by {}   // take_index
+
+        // assert cost (self.cost(p.take(k)) <= self.cost(p))
     }
 }
-
 /// Dijkstra's state: the settled set `S`, and for every node the best path found
 /// so far from `src` (`None` = not yet reached). The tentative distance of a node
 /// is the cost of its best path.
@@ -193,5 +206,7 @@ impl DijkstrasSpec<'_> {
         admit();  // TODO(student): replace with a proof
     }
 }
+
+fn main() {}
 
 } // verus!
