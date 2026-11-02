@@ -48,7 +48,13 @@ F: [A, C, D, E, F]
 * need to tell SMT solver what values to enumerate 
 * usually attached to a function
 * form of universal insanitation 
+* knows to enumerate, doesn't know which values to instantiate 
+* gap between a and c too big, need to instantiate what's in-between a and c
+    * a -> ... -> c
+    * instantiate ...
 
 ```rust
 forall|u:nat, v:nat| (#[trigger] (self.e(u,v)).is_some()) ==> u < self.n && v < self.n 
 ```
+
+## *Lecture 11-2-26*

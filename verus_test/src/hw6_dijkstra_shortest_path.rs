@@ -100,6 +100,7 @@ impl GraphSpec {
         ensures
             self.is_path(p.take(k)),
             self.cost(p.take(k)) <= self.cost(p),
+        decreases p.len() - k,
     {
         // TODO(student): replace with a proof
         // * need assertions for take 
@@ -110,15 +111,26 @@ impl GraphSpec {
         assert(q.last() == p[k - 1]);
         assert forall|i: int| 0 <= i < k implies q[i] == p[i] by {}   // take_index
 
-        // assert cost (self.cost(p.take(k)) <= self.cost(p))
+        // assert cost (self.cost(p.take(k)) <= self.cost(p)) (need to use induction)
+        if k == p.len() {
+            assert(p.take(k) =~= p);
+        } else {
+            let r = p.drop_last();
+            assert(r.len() == p.len() - 1);
+            assert(r.take(k) =~= p.take(k));
+            assert(p =~= r.push(p.last()));
+
+            self.lemma_prefix(r, k);
+        }
     }
 }
 /// Dijkstra's state: the settled set `S`, and for every node the best path found
 /// so far from `src` (`None` = not yet reached). The tentative distance of a node
 /// is the cost of its best path.
-pub ghost struct DijkstraState {
+pub ghost struct DijkstraState { // * shows up as st
     pub settled: Set<nat>,
     pub best: spec_fn(nat) -> Option<Seq<nat>>,
+    // * how to initialize best
 }
 
 /// Dijkstra's algorithm as a specification, kept apart from the graph so that
@@ -164,7 +176,8 @@ impl DijkstrasSpec<'_> {
     /// out-edges.
     /// TODO(student)
     pub uninterp spec fn settle(self, st: DijkstraState, u: nat) -> DijkstraState;
-
+    // * figure out how to define best 
+    
     /// Repeat `settle(st, pick(st))` until `dst` is settled or `pick` returns `None`.
     /// TODO(student): define it, including its `decreases` measure.
     pub uninterp spec fn run(self, dst: nat, st: DijkstraState) -> DijkstraState;
