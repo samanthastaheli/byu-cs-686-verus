@@ -141,19 +141,23 @@ pub ghost struct DijkstrasSpec<'a> {
 
 impl DijkstrasSpec<'_> {
     // TODO(student): add the invariant, helper specs, and supporting lemmas here.
+    // * spec invariant
+    // * three seprate specs
 
     /// The crossing-edge lemma: a path from inside `S` to outside `S` has a
     /// first vertex `y` outside `S`; its prefix to `y` only has `S` before the end.
     pub proof fn lemma_first_exit(self, p: Seq<nat>, inside: spec_fn(nat) -> bool)
         requires
             self.graph.is_path(p),
-            inside(p.first()),
-            !inside(p.last()),
+            inside(p.first()), // * at a minimum the first node is inside 
+            !inside(p.last()), // * last node outside 
         ensures
             exists|k: int|
                 1 <= k < p.len() && !inside(p[k]) && forall|j: int| 0 <= j < k ==> inside(p[j]),
     {
-        admit();  // TODO(student): replace with a proof
+        // TODO(student): replace with a proof
+        
+        // assert(inside(p.first()))
     }
 
     /// Tentative distance of `v` in `st`: the cost of its best path.
@@ -217,6 +221,9 @@ impl DijkstrasSpec<'_> {
     {
         // * talking about on Monday (Nov 2)
         admit();  // TODO(student): replace with a proof
+        // * show select perserves invariant
+        // * show relax perserves invariant
+        // * show run perserves invariant
     }
 }
 

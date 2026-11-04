@@ -57,4 +57,25 @@ F: [A, C, D, E, F]
 forall|u:nat, v:nat| (#[trigger] (self.e(u,v)).is_some()) ==> u < self.n && v < self.n 
 ```
 
-## *Lecture 11-2-26*
+## *Lecture 11-4-26*
+
+### Spec Invariant
+
+define a function called invariant
+
+invariant: pick and settle, then run must preserve the invariant
+
+1. src < graph.n
+2. state.best(src) = [src]
+3. forall v in s, graph.is_shortest_path(state.best(v)) (everything that's settled is the shortest path)
+4. forall v, 0 <= v < graph.n && state.best(v.is_some()) ==> graph.is_path_from_to(state.best(v).unwrap src, v) (best for any node is path from src to that node)
+5. forall i,j 
+    * i is a node in settled s 
+    * j is a node outside of settled s
+    * if i,j then:
+      * state.best(j).is_some()
+      * graph.cost(state.best(j).unwrap())
+      * graph.cost(i) + graph.edge(i, j)
+    * 1. selection, 2. relaxing 
+      * to show preserve the invariant, have to show select always choose least cost canditate 
+      * relaxing, everything satififies 5
