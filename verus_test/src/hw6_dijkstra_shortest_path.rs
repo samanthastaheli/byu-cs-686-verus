@@ -142,7 +142,27 @@ pub ghost struct DijkstrasSpec<'a> {
 impl DijkstrasSpec<'_> {
     // TODO(student): add the invariant, helper specs, and supporting lemmas here.
     // * spec invariant
-    // * three seprate specs
+    // * three seprate specs (pick, settle, run)
+
+    pub open spec fn inv(self, st: DijkstraState, src: nat) -> bool {
+        &&& src < self.graph.n
+        &&& (st.best)(src) == Some(seq![src])
+        // everything settled has a shortest best path
+        &&& forall|v: nat| #[trigger] st.settled.contains(v) ==> {
+            &&& (st.best)(v).is_some()
+            &&& self.graph.is_shortest((st.best)(v).unwrap(), src, v)
+        }
+        // any best path is a path from src to that node
+        &&& forall|v: nat| v < self.graph.n && (#[trigger] (st.best)(v)).is_some() ==>
+            self.graph.is_path_from_to((st.best)(v).unwrap(), src, v)
+        // edges leaving the settled set have been relaxed
+        &&& forall|i: nat, j: nat|
+            st.settled.contains(i) && !st.settled.contains(j)
+                && (#[trigger] self.graph.edge(i, j)).is_some() ==> {
+            &&& (st.best)(j).is_some()
+            &&& self.cost_of(st, j) <= self.cost_of(st, i) + self.graph.edge(i, j).unwrap()
+        }
+    }
 
     /// The crossing-edge lemma: a path from inside `S` to outside `S` has a
     /// first vertex `y` outside `S`; its prefix to `y` only has `S` before the end.
@@ -154,43 +174,123 @@ impl DijkstrasSpec<'_> {
         ensures
             exists|k: int|
                 1 <= k < p.len() && !inside(p[k]) && forall|j: int| 0 <= j < k ==> inside(p[j]),
+        decreases p.len(),
     {
         // TODO(student): replace with a proof
         
-        // assert(inside(p.first()))
+        // p.len() >= 2, since first is inside and last is not
+        if exists|j: int| 1 <= j < p.len() - 1 && !inside(p[j]) {
+            let j = choose|j: int| 1 <= j < p.len() - 1 && !inside(p[j]);
+            let q = p.take(j + 1);
+            self.graph.lemma_prefix(p, j + 1);
+            assert(q.first() == p.first());
+            assert(q.last() == p[j]);
+            self.lemma_first_exit(q, inside);
+            let k = choose|k: int| 1 <= k < q.len() && !inside(q[k])
+                && forall|i: int| 0 <= i < k ==> inside(q[i]);
+            assert(q[k] == p[k]);
+            assert forall|i: int| 0 <= i < k implies inside(p[i]) by { assert(q[i] == p[i]); }
+            assert(1 <= k < p.len() && !inside(p[k])
+                && forall|i: int| 0 <= i < k ==> inside(p[i]));  // witness
+        } else {
+            let k = p.len() - 1;
+            assert(!inside(p[k]));
+            assert(forall|i: int| 0 <= i < k ==> inside(p[i]));  // i == 0 is p.first()
+        }
     }
 
     /// Tentative distance of `v` in `st`: the cost of its best path.
     /// TODO(student) Meaningful only when `v` has a best path. 
-    pub uninterp spec fn cost_of(self, st: DijkstraState, v: nat) -> nat;
+    pub open spec fn cost_of(self, st: DijkstraState, v: nat) -> nat
+    {
+        self.graph.cost((st.best)(v).unwrap())
+    }
 
     /// TODO(student) `v` is in range, unsettled, and has a best path. 
-    pub uninterp spec fn is_candidate(self, st: DijkstraState, v: nat) -> bool;
+    pub open spec fn is_candidate(self, st: DijkstraState, v: nat) -> bool
+    {
+        &&& v < self.graph.n
+        &&& !st.settled.contains(v)
+        &&& (st.best)(v).is_some()
+    }
+
+    /// Helper: a candidate whose distance is <= every other candidate's.
+    pub open spec fn is_min_candidate(self, st: DijkstraState, u: nat) -> bool {
+        &&& self.is_candidate(st, u)
+        &&& forall|v: nat| #[trigger] self.is_candidate(st, v)
+                ==> self.cost_of(st, u) <= self.cost_of(st, v)
+    }
 
     /// The next node to settle: `Some(u)` where `u` is a candidate whose
     /// tentative distance is at most that of every other candidate, or `None`
     /// TODO(student) when there is no candidate. 
-    pub uninterp spec fn pick(self, st: DijkstraState) -> Option<nat>;
+    pub open spec fn pick(self, st: DijkstraState) -> Option<nat> {
+        if exists|u: nat| self.is_min_candidate(st, u) {
+            Some(choose|u: nat| self.is_min_candidate(st, u))
+        } else {
+            None
+        }
+    }
 
     /// Initial state: nothing settled; only `src` has a path, `[src]`.
     /// TODO(student)
-    pub uninterp spec fn init(self, src: nat) -> DijkstraState;
+    pub open spec fn init(self, src: nat) -> DijkstraState {
+        DijkstraState {
+            settled: Set::empty(),
+            best: |v: nat| if v == src { Some(seq![src]) } else { None },
+        }
+    }
+
+    /// Helper: relaxing edge (u, v) gives a strictly better path to `v`.
+    /// `v != u` is needed because `st.settled` doesn't contain `u` yet.
+    pub open spec fn improves(self, st: DijkstraState, u: nat, v: nat) -> bool {
+        &&& self.graph.edge(u, v).is_some()
+        &&& v != u
+        &&& !st.settled.contains(v)
+        &&& match (st.best)(v) {
+            None => true,
+            Some(old) => self.graph.cost((st.best)(u).unwrap().push(v))
+                < self.graph.cost(old),
+        }
+    }
 
     /// One round: settle `u` (the node chosen by `pick`) and relax its
     /// out-edges.
     /// TODO(student)
-    pub uninterp spec fn settle(self, st: DijkstraState, u: nat) -> DijkstraState;
+    pub open spec fn settle(self, st: DijkstraState, u: nat) -> DijkstraState
     // * figure out how to define best 
+    {
+        DijkstraState {
+            settled: st.settled.insert(u),
+            best: |v: nat|
+                if self.improves(st, u, v) {
+                    Some((st.best)(u).unwrap().push(v))
+                } else {
+                    (st.best)(v)
+                },
+        }
+    }
     
     /// Repeat `settle(st, pick(st))` until `dst` is settled or `pick` returns `None`.
     /// TODO(student): define it, including its `decreases` measure.
-    pub uninterp spec fn run(self, dst: nat, st: DijkstraState) -> DijkstraState;
+    pub open spec fn run(self, dst: nat, st: DijkstraState, fuel: nat) -> DijkstraState
+        decreases fuel,
+    {
+        if fuel == 0 || st.settled.contains(dst) {
+            st
+        } else {
+            match self.pick(st) {
+                None => st,
+                Some(u) => self.run(dst, self.settle(st, u), (fuel - 1) as nat),
+            }
+        }
+    }
 
     /// Cost and path found by Dijkstra's algorithm; `None` when a node is out of
     /// range or `dst` is unreachable.
     pub open spec fn shortest_path(self, src: nat, dst: nat) -> Option<(nat, Seq<nat>)> {
         if src < self.graph.n && dst < self.graph.n {
-            let f = self.run(dst, self.init(src)); // * run needs a terminations arg, via func arg
+            let f = self.run(dst, self.init(src), self.graph.n); // * run needs a terminations arg, via func arg
             if f.settled.contains(dst) {
                 let p = (f.best)(dst).unwrap();
                 Some((self.graph.cost(p), p))
@@ -219,11 +319,11 @@ impl DijkstrasSpec<'_> {
                 )),
             },
     {
-        // * talking about on Monday (Nov 2)
-        admit();  // TODO(student): replace with a proof
-        // * show select perserves invariant
-        // * show relax perserves invariant
-        // * show run perserves invariant
+        // admit();  // TODO(student): replace with a proof
+        // * show select preserves invariant
+        self.inv(self.init(src), src);
+        // * show relax preserves invariant
+        // * show run preserves invariant
     }
 }
 
