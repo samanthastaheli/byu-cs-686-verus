@@ -66,7 +66,7 @@ impl GraphSpec {
         // * might use choose concept in some of proofs 
         // * let p be a path between s,t (choose)
         // * have to prove path exists before choose  
-        exists|p: Seq<nat>| self.is_path_from_to(p, s, t) // * existentials are tricky 
+        exists|p: Seq<nat>| self.is_path_from_to(p, s, t) // * existential are tricky 
     }
 
     // ---- Lectures 1-2: the classical-proof lemmas (graph facts, no algorithm) ----
@@ -142,7 +142,7 @@ pub ghost struct DijkstrasSpec<'a> {
 impl DijkstrasSpec<'_> {
     // TODO(student): add the invariant, helper specs, and supporting lemmas here.
     // * spec invariant
-    // * three seprate specs (pick, settle, run)
+    // * three separate specs (pick, settle, run)
 
     pub open spec fn inv(self, st: DijkstraState, src: nat) -> bool {
         &&& src < self.graph.n
@@ -153,7 +153,7 @@ impl DijkstrasSpec<'_> {
             &&& self.graph.is_shortest((st.best)(v).unwrap(), src, v)
         }
         // any best path is a path from src to that node
-        &&& forall|v: nat| v < self.graph.n && (#[trigger] (st.best)(v)).is_some() ==>
+        &&& forall|v: nat| 0 <= v < self.graph.n && (#[trigger] (st.best)(v)).is_some() ==>
             self.graph.is_path_from_to((st.best)(v).unwrap(), src, v)
         // edges leaving the settled set have been relaxed
         &&& forall|i: nat, j: nat|
@@ -209,9 +209,9 @@ impl DijkstrasSpec<'_> {
     /// TODO(student) `v` is in range, unsettled, and has a best path. 
     pub open spec fn is_candidate(self, st: DijkstraState, v: nat) -> bool
     {
-        &&& v < self.graph.n
-        &&& !st.settled.contains(v)
-        &&& (st.best)(v).is_some()
+        &&& v < self.graph.n // in range
+        &&& !st.settled.contains(v) // unsettled
+        &&& (st.best)(v).is_some() // best path
     }
 
     /// Helper: a candidate whose distance is <= every other candidate's.
